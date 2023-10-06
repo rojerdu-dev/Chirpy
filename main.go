@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net/http"
@@ -64,7 +65,13 @@ func main() {
 	}
 
 	// Start server
-	log.Printf("Serving files from %s on port: %s\n", filePathRoot, port)
-	log.Fatal(newServer.ListenAndServe())
+	log.Printf("Serving files from %s on port:%s\n", filePathRoot, port)
+	//log.Fatal(newServer.ListenAndServe())
 
+	err := newServer.ListenAndServe()
+	if err != nil {
+		if !errors.Is(err, http.ErrServerClosed) {
+			panic(err)
+		}
+	}
 }
