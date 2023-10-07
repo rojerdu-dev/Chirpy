@@ -29,12 +29,18 @@ func main() {
 	//r.Get("/metrics", apiCfg.handlerMetrics)
 	//r.Get("/reset", apiCfg.handlerReset)
 
+	apiRouter := chi.NewRouter()
+	apiRouter.Get("/healthz", handlerReadiness)
+	apiRouter.Get("/metrics", apiCfg.handlerMetrics)
+	apiRouter.Get("/reset", apiCfg.handlerReset)
+	r.Mount("/api", apiRouter)
+
 	// new router to prefix /api to routes /healthz, /reset and /metrics
-	r.Route("/api", func(api chi.Router) {
-		api.Get("/healthz", handlerReadiness)
-		api.Get("/metrics", apiCfg.handlerMetrics)
-		api.Get("/reset", apiCfg.handlerReset)
-	})
+	//r.Route("/api", func(api chi.Router) {
+	//	api.Get("/healthz", handlerReadiness)
+	//	api.Get("/metrics", apiCfg.handlerMetrics)
+	//	api.Get("/reset", apiCfg.handlerReset)
+	//})
 
 	corsMux := middlewareCors(r)
 
