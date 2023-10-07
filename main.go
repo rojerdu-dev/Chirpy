@@ -2,32 +2,13 @@ package main
 
 import (
 	"errors"
-	"fmt"
+	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
 )
 
 type apiConfig struct {
 	fileServerHits int
-}
-
-func (cfg *apiConfig) handlerMetrics(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content-Type", "text/plain; charset=UTF-8")
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte(fmt.Sprintf("Hits: %d", cfg.fileServerHits)))
-}
-
-func (cfg *apiConfig) middlewareMetricsInc(next http.Handler) http.Handler {
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		cfg.fileServerHits++
-		next.ServeHTTP(w, r)
-	})
-}
-
-func (cfg *apiConfig) handlerReset(w http.ResponseWriter, r *http.Request) {
-	cfg.fileServerHits = 0
-	w.WriteHeader(http.StatusOK)
-	w.Write([]byte("Hits reset to 0"))
 }
 
 func main() {
@@ -38,26 +19,17 @@ func main() {
 		fileServerHits: 0,
 	}
 
-	// Create new ServeMux
-	mux := http.NewServeMux()
+	r := chi.NewRouter()
 
-	// Update to /app/ path
-	mux.Handle("/app/", apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filePathRoot)))))
+	fsHandler := apiCfg.middlewareMetricsInc(http.StripPrefix("/app", http.FileServer(http.Dir(filePathRoot))))
+	r.Handle("/app/*", fsHandler)
+	r.Handle("/app", fsHandler)
 
-	// Add Handler for /metrics path
-	mux.HandleFunc("/metrics", apiCfg.handlerMetrics)
+	r.Get("/healthz", handlerReadiness)
+	r.Get("/metrics", apiCfg.handlerMetrics)
+	r.Get("/reset", apiCfg.handlerReset)
 
-	// Add reset handler
-	mux.HandleFunc("/reset", apiCfg.handlerReset)
-
-	// Readiness Endpoint
-	mux.HandleFunc("/healthz", handlerReadiness)
-
-	// Add Handler for /assets path
-	mux.Handle("/assets", http.FileServer(http.Dir(filePathRoot)))
-
-	// Wrap in custom middleware to handle CORS
-	corsMux := middlewareCors(mux)
+	corsMux := middlewareCors(r)
 
 	newServer := &http.Server{
 		Addr:    ":" + port,
