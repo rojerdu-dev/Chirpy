@@ -25,9 +25,16 @@ func main() {
 	r.Handle("/app/*", fsHandler)
 	r.Handle("/app", fsHandler)
 
-	r.Get("/healthz", handlerReadiness)
-	r.Get("/metrics", apiCfg.handlerMetrics)
-	r.Get("/reset", apiCfg.handlerReset)
+	//r.Get("/healthz", handlerReadiness)
+	//r.Get("/metrics", apiCfg.handlerMetrics)
+	//r.Get("/reset", apiCfg.handlerReset)
+
+	// new router to prefix /api to routes /healthz, /reset and /metrics
+	r.Route("/api", func(api chi.Router) {
+		api.Get("/healthz", handlerReadiness)
+		api.Get("/metrics", apiCfg.handlerMetrics)
+		api.Get("/reset", apiCfg.handlerReset)
+	})
 
 	corsMux := middlewareCors(r)
 
