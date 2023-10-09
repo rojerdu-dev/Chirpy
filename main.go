@@ -6,6 +6,7 @@ import (
 	"github.com/go-chi/chi/v5"
 	"log"
 	"net/http"
+	"strings"
 )
 
 type apiConfig struct {
@@ -26,29 +27,18 @@ func main() {
 	r.Handle("/app/*", fsHandler)
 	r.Handle("/app", fsHandler)
 
-	//r.Get("/healthz", handlerReadiness)
-	//r.Get("/metrics", apiCfg.handlerMetrics)
-	//r.Get("/reset", apiCfg.handlerReset)
-
-	// new router to prefix /api to routes /healthz and /reset
+	// /api Route
 	apiRouter := chi.NewRouter()
 	apiRouter.Get("/healthz", handlerReadiness)
-	//apiRouter.Get("/metrics", apiCfg.handlerMetrics)
+	apiRouter.Get("/metrics", apiCfg.handlerMetrics)
 	apiRouter.Get("/reset", apiCfg.handlerReset)
 	apiRouter.Post("/validate_chirp", handlerChirpsValidate)
 	r.Mount("/api", apiRouter)
 
-	// new router to prefix /admin to routes /metrics
+	// /admin Route
 	adminRouter := chi.NewRouter()
 	adminRouter.Get("/metrics", apiCfg.handlerMetrics)
 	r.Mount("/admin", adminRouter)
-
-	// new router to prefix /api to routes /healthz, /reset and /metrics
-	//r.Route("/api", func(api chi.Router) {
-	//	api.Get("/healthz", handlerReadiness)
-	//	api.Get("/metrics", apiCfg.handlerMetrics)
-	//	api.Get("/reset", apiCfg.handlerReset)
-	//})
 
 	corsMux := middlewareCors(r)
 
@@ -57,9 +47,7 @@ func main() {
 		Handler: corsMux,
 	}
 
-	// Start server
 	log.Printf("Serving files from %s on port:%s\n", filePathRoot, port)
-	//log.Fatal(newServer.ListenAndServe())
 
 	err := newServer.ListenAndServe()
 	if err != nil {
@@ -74,7 +62,8 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 		Body string `json:"body"`
 	}
 	type returnVals struct {
-		Valid bool `json:"valid"`
+		//Valid       bool   `json:"valid"`
+		CleanedBody string `json:"cleaned_body"`
 	}
 
 	decoder := json.NewDecoder(r.Body)
@@ -91,8 +80,15 @@ func handlerChirpsValidate(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	badWords := map[string]struct{}{
+		"kerfuffle": {},
+		"sharbert":  {},
+		"fornax":    {},
+	}
+	cleaned := censorBadWords(params.Body, badWords)
+
 	respondWithJSON(w, http.StatusOK, returnVals{
-		Valid: true,
+		CleanedBody: cleaned,
 	})
 }
 
@@ -118,4 +114,16 @@ func respondWithJSON(w http.ResponseWriter, code int, payload interface{}) {
 	}
 	w.WriteHeader(code)
 	w.Write(data)
+}
+
+func censorBadWords(body string, badWords map[string]struct{}) string {
+	words := strings.Split(body, " ")
+	for i, word := range words {
+		loweredWord := strings.ToLower(word)
+		if _, ok := badWords[loweredWord]; ok {
+			words[i] = "****"
+		}
+	}
+	cleaned := strings.Join(words, " ")
+	return cleaned
 }
