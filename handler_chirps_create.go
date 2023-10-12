@@ -22,7 +22,9 @@ func (cfg *apiConfig) handlerChirpsCreate(w http.ResponseWriter, r *http.Request
 	err := decoder.Decode(&params)
 	if err != nil {
 		respondWithError(w, http.StatusInternalServerError, "Couldn't decode parameters")
+		return
 	}
+
 	cleaned, err := validateChirp(params.Body)
 	if err != nil {
 		respondWithError(w, http.StatusBadRequest, err.Error())
