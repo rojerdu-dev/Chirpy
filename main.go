@@ -2,11 +2,11 @@ package main
 
 import (
 	"errors"
+	"github.com/rojerdu-dev/Chirpy/internal/database"
 	"log"
 	"net/http"
 
 	"github.com/go-chi/chi/v5"
-	"github.com/rojerdu-dev/Chirpy/internal"
 )
 
 type apiConfig struct {
@@ -38,6 +38,10 @@ func main() {
 	apiRouter := chi.NewRouter()
 	apiRouter.Get("/healthz", handlerReadiness)
 	apiRouter.Get("/reset", apiCfg.handlerReset)
+
+	apiRouter.Post("/login", apiCfg.handlerLogin)
+	apiRouter.Post("/users", apiCfg.handlerUsersCreate)
+
 	apiRouter.Post("/chirps", apiCfg.handlerChirpsCreate)
 	apiRouter.Get("/chirps", apiCfg.handlerChirpsRetrieve)
 	apiRouter.Get("/chirps/{chirpID}", apiCfg.handlerChirpsGet)
