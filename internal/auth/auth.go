@@ -11,7 +11,7 @@ import (
 )
 
 // ErrNoAuthHeaderIncluded
-var ErrNoAuthHeaderIncluded = errors.New("no auth header included in request")
+var ErrNoAuthHeaderIncluded = errors.New("not auth header included in request")
 
 // Hash Password
 func HashPassword(password string) (string, error) {
