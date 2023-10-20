@@ -37,19 +37,6 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusUnauthorized, "Invalid password")
 		return
 	}
-	//
-	//defaultExpiration := 60 * 60 * 24
-	//if params.ExpiresInSeconds == 0 {
-	//	params.ExpiresInSeconds = defaultExpiration
-	//} else if params.ExpiresInSeconds > defaultExpiration {
-	//	params.ExpiresInSeconds = defaultExpiration
-	//}
-	//
-	//token, err := auth.MakeJWT(user.ID, cfg.jwtSecret, time.Duration(params.ExpiresInSeconds)*time.Second)
-	//if err != nil {
-	//	respondWithError(w, http.StatusInternalServerError, "Couldn't create JWT")
-	//	return
-	//}
 
 	accessToken, err := auth.MakeJWT(
 		user.ID,
@@ -74,8 +61,9 @@ func (cfg *apiConfig) handlerLogin(w http.ResponseWriter, r *http.Request) {
 
 	respondWithJSON(w, http.StatusOK, response{
 		User: User{
-			ID:    user.ID,
-			Email: user.Email,
+			ID:          user.ID,
+			Email:       user.Email,
+			IsChirpyRed: user.IsChirpyRed,
 		},
 		Token:        accessToken,
 		RefreshToken: refreshToken,

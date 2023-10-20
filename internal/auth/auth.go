@@ -41,7 +41,7 @@ func CheckPasswordHash(password, hash string) error {
 func MakeJWT(userID int,
 	tokenSecret string,
 	expiresIn time.Duration,
-	tokenType TokenType
+	tokenType TokenType,
 ) (string, error) {
 	signingKey := []byte(tokenSecret)
 
@@ -134,6 +134,20 @@ func GetBearerToken(headers http.Header) (string, error) {
 	}
 	splitAuth := strings.Split(authHeader, " ")
 	if len(splitAuth) < 2 || splitAuth[0] != "Bearer" {
+		return "", errors.New("malformed authorization header")
+	}
+
+	return splitAuth[1], nil
+}
+
+// Get API Key
+func GetApiKey(headers http.Header) (string, error) {
+	authHeader := headers.Get("Authorization")
+	if authHeader == "" {
+		return "", ErrNoAuthHeaderIncluded
+	}
+	splitAuth := strings.Split(authHeader, " ")
+	if len(splitAuth) < 2 || splitAuth[0] != "ApiKey" {
 		return "", errors.New("malformed authorization header")
 	}
 
